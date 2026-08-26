@@ -6,9 +6,13 @@ namespace KayraExport.Infrastructure.Services;
 
 public class RedisCacheService : ICacheService
 {
+    private static readonly TimeSpan OperationTimeout =
+        TimeSpan.FromSeconds(3);
+
     private readonly IDatabase _database;
 
-    public RedisCacheService(IConnectionMultiplexer connectionMultiplexer)
+    public RedisCacheService(
+        IConnectionMultiplexer connectionMultiplexer)
     {
         _database = connectionMultiplexer.GetDatabase();
     }
@@ -17,14 +21,37 @@ public class RedisCacheService : ICacheService
         string key,
         CancellationToken cancellationToken = default)
     {
-        var cachedValue = await _database.StringGetAsync(key);
-
-        if (cachedValue.IsNullOrEmpty)
+        try
         {
+            var cachedValue = await _database
+                .StringGetAsync(key)
+                .WaitAsync(OperationTimeout, cancellationToken);
+
+            if (cachedValue.IsNullOrEmpty)
+            {
+                Console.WriteLine($"Redis cache miss: {key}");
+                return default;
+            }
+
+            Console.WriteLine($"Redis cache hit: {key}");
+
+            return JsonSerializer.Deserialize<T>(
+                cachedValue.ToString());
+        }
+        catch (RedisException exception)
+        {
+            Console.WriteLine(
+                $"Redis GET error: {exception.Message}");
+
             return default;
         }
+        catch (TimeoutException exception)
+        {
+            Console.WriteLine(
+                $"Redis GET timeout: {exception.Message}");
 
-        return JsonSerializer.Deserialize<T>(cachedValue.ToString());
+            return default;
+        }
     }
 
     public async Task SetAsync<T>(
@@ -33,18 +60,51 @@ public class RedisCacheService : ICacheService
         TimeSpan expiration,
         CancellationToken cancellationToken = default)
     {
-        var serializedValue = JsonSerializer.Serialize(value);
+        try
+        {
+            var serializedValue = JsonSerializer.Serialize(value);
 
-        await _database.StringSetAsync(
-            key,
-            serializedValue,
-            expiration);
+            var wasSet = await _database
+                .StringSetAsync(key, serializedValue, expiration)
+                .WaitAsync(OperationTimeout, cancellationToken);
+
+            Console.WriteLine(
+                $"Redis SET result: Key={key}, Success={wasSet}");
+        }
+        catch (RedisException exception)
+        {
+            Console.WriteLine(
+                $"Redis SET error: {exception.Message}");
+        }
+        catch (TimeoutException exception)
+        {
+            Console.WriteLine(
+                $"Redis SET timeout: {exception.Message}");
+        }
     }
 
     public async Task RemoveAsync(
         string key,
         CancellationToken cancellationToken = default)
     {
-        await _database.KeyDeleteAsync(key);
+        try
+        {
+            var wasRemoved = await _database
+                .KeyDeleteAsync(key)
+                .WaitAsync(OperationTimeout, cancellationToken);
+
+            Console.WriteLine(
+                $"Redis DELETE result: Key={key}, Removed={wasRemoved}");
+        }
+        catch (RedisException exception)
+        {
+            Console.WriteLine(
+                $"Redis DELETE error: {exception.Message}");
+        }
+        catch (TimeoutException exception)
+        {
+            Console.WriteLine(
+                $"Redis DELETE timeout: {exception.Message}");
+        }
     }
 }
