@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KayraExport.Core", "KayraExport.Core\KayraExport.Core.csproj", "{81578E56-30AF-4A80-8C7D-B61A863BF3EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KayraExport.Application", "KayraExport.Application\KayraExport.Application.csproj", "{2BCEC466-FA5B-4592-92BC-B2B79C303944}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KayraExport.Infrastructure", "KayraExport.Infrastructure\KayraExport.Infrastructure.csproj", "{927E3586-19D1-4C61-BC29-732F6BF79AE0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KayraExport.API", "KayraExport.API\KayraExport.API.csproj", "{92E9E05F-5EFF-4C09-A5FC-1B61B5996101}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{81578E56-30AF-4A80-8C7D-B61A863BF3EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81578E56-30AF-4A80-8C7D-B61A863BF3EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81578E56-30AF-4A80-8C7D-B61A863BF3EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81578E56-30AF-4A80-8C7D-B61A863BF3EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2BCEC466-FA5B-4592-92BC-B2B79C303944}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2BCEC466-FA5B-4592-92BC-B2B79C303944}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2BCEC466-FA5B-4592-92BC-B2B79C303944}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2BCEC466-FA5B-4592-92BC-B2B79C303944}.Release|Any CPU.Build.0 = Release|Any CPU
+		{927E3586-19D1-4C61-BC29-732F6BF79AE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{927E3586-19D1-4C61-BC29-732F6BF79AE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{927E3586-19D1-4C61-BC29-732F6BF79AE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{927E3586-19D1-4C61-BC29-732F6BF79AE0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92E9E05F-5EFF-4C09-A5FC-1B61B5996101}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92E9E05F-5EFF-4C09-A5FC-1B61B5996101}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92E9E05F-5EFF-4C09-A5FC-1B61B5996101}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92E9E05F-5EFF-4C09-A5FC-1B61B5996101}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
