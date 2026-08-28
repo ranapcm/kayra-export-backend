@@ -13,6 +13,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KayraExport.API", "KayraExp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KayraExport.Tests", "KayraExport.Tests\KayraExport.Tests.csproj", "{B1A2CDFF-5720-422F-9339-84C51ED0E1BC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KayraExport.Gateway", "KayraExport.Gateway\KayraExport.Gateway.csproj", "{680F74FB-B9D9-4CE0-B802-047FB359EAF0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KayraExport.Auth.Core", "KayraExport.Auth.Core\KayraExport.Auth.Core.csproj", "{186AE6F8-BA5C-4AB9-889F-10386C973E6C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KayraExport.Auth.Application", "KayraExport.Auth.Application\KayraExport.Auth.Application.csproj", "{79E91649-43A4-4CC4-A37A-1C135582BB7B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KayraExport.Auth.Infrastructure", "KayraExport.Auth.Infrastructure\KayraExport.Auth.Infrastructure.csproj", "{C66F3F83-2DA7-4C13-BAC2-1618B0F60153}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KayraExport.Auth.API", "KayraExport.Auth.API\KayraExport.Auth.API.csproj", "{663770BC-46BA-4B14-9DAF-C0871E1CD13D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +52,25 @@ Global
 		{B1A2CDFF-5720-422F-9339-84C51ED0E1BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1A2CDFF-5720-422F-9339-84C51ED0E1BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1A2CDFF-5720-422F-9339-84C51ED0E1BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{680F74FB-B9D9-4CE0-B802-047FB359EAF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{680F74FB-B9D9-4CE0-B802-047FB359EAF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{680F74FB-B9D9-4CE0-B802-047FB359EAF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{680F74FB-B9D9-4CE0-B802-047FB359EAF0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{186AE6F8-BA5C-4AB9-889F-10386C973E6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{186AE6F8-BA5C-4AB9-889F-10386C973E6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{186AE6F8-BA5C-4AB9-889F-10386C973E6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{186AE6F8-BA5C-4AB9-889F-10386C973E6C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79E91649-43A4-4CC4-A37A-1C135582BB7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79E91649-43A4-4CC4-A37A-1C135582BB7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79E91649-43A4-4CC4-A37A-1C135582BB7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79E91649-43A4-4CC4-A37A-1C135582BB7B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C66F3F83-2DA7-4C13-BAC2-1618B0F60153}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C66F3F83-2DA7-4C13-BAC2-1618B0F60153}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C66F3F83-2DA7-4C13-BAC2-1618B0F60153}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C66F3F83-2DA7-4C13-BAC2-1618B0F60153}.Release|Any CPU.Build.0 = Release|Any CPU
+		{663770BC-46BA-4B14-9DAF-C0871E1CD13D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{663770BC-46BA-4B14-9DAF-C0871E1CD13D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{663770BC-46BA-4B14-9DAF-C0871E1CD13D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{663770BC-46BA-4B14-9DAF-C0871E1CD13D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
