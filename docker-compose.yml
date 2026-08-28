@@ -17,6 +17,28 @@ services:
       timeout: 5s
       retries: 5
 
+  auth-postgres:
+    image: postgres:15-alpine
+    container_name: kayra-auth-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kayra_auth_db
+      POSTGRES_USER: kayra_auth_user
+      POSTGRES_PASSWORD: kayra_auth_dev_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U kayra_auth_user -d kayra_auth_db"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   redis:
     image: redis:7-alpine
     container_name: kayra-redis
@@ -33,4 +55,5 @@ services:
 
 volumes:
   postgres_data:
+  auth_postgres_data:
   redis_data:
