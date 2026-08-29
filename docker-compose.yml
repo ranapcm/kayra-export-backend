@@ -39,6 +39,28 @@ services:
       timeout: 5s
       retries: 5
 
+  log-postgres:
+    image: postgres:15-alpine
+    container_name: kayra-log-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kayra_log_db
+      POSTGRES_USER: kayra_log_user
+      POSTGRES_PASSWORD: kayra_log_dev_password
+    ports:
+      - "5434:5432"
+    volumes:
+      - log_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U kayra_log_user -d kayra_log_db"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   redis:
     image: redis:7-alpine
     container_name: kayra-redis
@@ -71,5 +93,6 @@ services:
 volumes:
   postgres_data:
   auth_postgres_data:
+  log_postgres_data:
   redis_data:
   rabbitmq_data:
