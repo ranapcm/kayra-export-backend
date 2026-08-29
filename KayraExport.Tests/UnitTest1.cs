@@ -1,5 +1,6 @@
 using KayraExport.Application.Interfaces;
 using KayraExport.Application.Products.Commands.CreateProduct;
+using KayraExport.Application.Products.Events;
 using KayraExport.Core.Entities;
 using Moq;
 
@@ -8,10 +9,11 @@ namespace KayraExport.Tests;
 public class CreateProductCommandHandlerTests
 {
     [Fact]
-    public async Task Handle_WithValidCommand_CreatesProductAndClearsCache()
+    public async Task Handle_WithValidCommand_CreatesProductClearsCacheAndPublishesEvent()
     {
         var productRepository = new Mock<IProductRepository>();
         var cacheService = new Mock<ICacheService>();
+        var eventPublisher = new Mock<IEventPublisher>();
 
         productRepository
             .Setup(repository => repository.AddAsync(
@@ -30,9 +32,17 @@ public class CreateProductCommandHandlerTests
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        eventPublisher
+            .Setup(publisher => publisher.PublishAsync(
+                It.IsAny<ProductCreatedEvent>(),
+                "product.created",
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         var handler = new CreateProductCommandHandler(
             productRepository.Object,
-            cacheService.Object);
+            cacheService.Object,
+            eventPublisher.Object);
 
         var command = new CreateProductCommand
         {
@@ -70,6 +80,19 @@ public class CreateProductCommandHandlerTests
                 "products:all",
                 It.IsAny<CancellationToken>()),
             Times.Once);
+
+        eventPublisher.Verify(
+            publisher => publisher.PublishAsync(
+                It.Is<ProductCreatedEvent>(integrationEvent =>
+                    integrationEvent.ProductId == result.Id &&
+                    integrationEvent.Name == "Test Monitor" &&
+                    integrationEvent.Description ==
+                        "27 inch test monitor" &&
+                    integrationEvent.Price == 7499.90m &&
+                    integrationEvent.Stock == 15),
+                "product.created",
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -77,6 +100,7 @@ public class CreateProductCommandHandlerTests
     {
         var productRepository = new Mock<IProductRepository>();
         var cacheService = new Mock<ICacheService>();
+        var eventPublisher = new Mock<IEventPublisher>();
 
         productRepository
             .Setup(repository => repository.AddAsync(
@@ -95,9 +119,17 @@ public class CreateProductCommandHandlerTests
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        eventPublisher
+            .Setup(publisher => publisher.PublishAsync(
+                It.IsAny<ProductCreatedEvent>(),
+                "product.created",
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         var handler = new CreateProductCommandHandler(
             productRepository.Object,
-            cacheService.Object);
+            cacheService.Object,
+            eventPublisher.Object);
 
         var command = new CreateProductCommand
         {
@@ -113,5 +145,15 @@ public class CreateProductCommandHandlerTests
 
         Assert.Equal("Laptop", result.Name);
         Assert.Equal("Test description", result.Description);
+
+        eventPublisher.Verify(
+            publisher => publisher.PublishAsync(
+                It.Is<ProductCreatedEvent>(integrationEvent =>
+                    integrationEvent.Name == "Laptop" &&
+                    integrationEvent.Description ==
+                        "Test description"),
+                "product.created",
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }

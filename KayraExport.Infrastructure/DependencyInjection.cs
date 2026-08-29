@@ -1,4 +1,5 @@
 using KayraExport.Application.Interfaces;
+using KayraExport.Infrastructure.Messaging;
 using KayraExport.Infrastructure.Persistence;
 using KayraExport.Infrastructure.Repositories;
 using KayraExport.Infrastructure.Services;
@@ -27,6 +28,7 @@ public static class DependencyInjection
 
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddSingleton<ICacheService, RedisCacheService>();
+        services.AddSingleton<IEventPublisher, RabbitMqEventPublisher>();
 
         return services;
     }

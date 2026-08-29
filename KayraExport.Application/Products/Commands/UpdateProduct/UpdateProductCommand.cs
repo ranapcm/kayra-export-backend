@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using KayraExport.Application.Interfaces;
 using KayraExport.Application.Products.Dtos;
+using KayraExport.Application.Products.Events;
 using MediatR;
 
 namespace KayraExport.Application.Products.Commands.UpdateProduct;
@@ -28,13 +29,16 @@ public sealed class UpdateProductCommandHandler
 {
     private readonly IProductRepository _productRepository;
     private readonly ICacheService _cacheService;
+    private readonly IEventPublisher _eventPublisher;
 
     public UpdateProductCommandHandler(
         IProductRepository productRepository,
-        ICacheService cacheService)
+        ICacheService cacheService,
+        IEventPublisher eventPublisher)
     {
         _productRepository = productRepository;
         _cacheService = cacheService;
+        _eventPublisher = eventPublisher;
     }
 
     public async Task<ProductDto> Handle(
@@ -62,6 +66,20 @@ public sealed class UpdateProductCommandHandler
 
         await _cacheService.RemoveAsync(
             ProductCacheKeys.All,
+            cancellationToken);
+
+        var productUpdatedEvent = new ProductUpdatedEvent(
+            EventId: Guid.NewGuid(),
+            OccurredAt: DateTime.UtcNow,
+            ProductId: product.Id,
+            Name: product.Name,
+            Description: product.Description,
+            Price: product.Price,
+            Stock: product.Stock);
+
+        await _eventPublisher.PublishAsync(
+            productUpdatedEvent,
+            "product.updated",
             cancellationToken);
 
         return ProductDto.FromEntity(product);
