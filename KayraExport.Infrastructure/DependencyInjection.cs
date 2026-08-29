@@ -1,5 +1,4 @@
 using KayraExport.Application.Interfaces;
-using KayraExport.Infrastructure.Authentication;
 using KayraExport.Infrastructure.Persistence;
 using KayraExport.Infrastructure.Repositories;
 using KayraExport.Infrastructure.Services;
@@ -20,9 +19,6 @@ public static class DependencyInjection
             options.UseNpgsql(
                 configuration.GetConnectionString("PostgreSql")));
 
-        services.Configure<JwtSettings>(
-            configuration.GetSection(JwtSettings.SectionName));
-
         services.AddSingleton<IConnectionMultiplexer>(
             ConnectionMultiplexer.Connect(
                 configuration.GetConnectionString("Redis")
@@ -30,10 +26,7 @@ public static class DependencyInjection
                     "Redis connection string is missing.")));
 
         services.AddScoped<IProductRepository, ProductRepository>();
-        services.AddScoped<IUserRepository, UserRepository>();
         services.AddSingleton<ICacheService, RedisCacheService>();
-        services.AddSingleton<IPasswordHasher, PasswordHasher>();
-        services.AddScoped<ITokenService, JwtTokenService>();
 
         return services;
     }
