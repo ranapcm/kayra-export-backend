@@ -404,7 +404,36 @@ The tests cover:
 - Cache invalidation
 - Product event publishing
 
-## Deployment
+
+## Docker Images
+
+Build each microservice image from the repository root:
+
+```bash
+docker build -f KayraExport.Auth.API/Dockerfile -t kayra-auth-api:1.0.0 .
+docker build -f KayraExport.API/Dockerfile -t kayra-product-api:1.0.0 .
+docker build -f KayraExport.Log.API/Dockerfile -t kayra-log-api:1.0.0 .
+docker build -f KayraExport.Gateway/Dockerfile -t kayra-gateway:1.0.0 .
+```
+
+List the generated images:
+
+```bash
+docker images
+```
+
+Each image exposes port `8080`. Runtime settings such as database connections, RabbitMQ connections, service addresses, and the JWT key must be supplied through environment variables.
+
+Example:
+
+```bash
+docker run --rm -p 5227:8080 \
+  -e ASPNETCORE_ENVIRONMENT=Production \
+  -e Jwt__Key="your-secure-production-key" \
+  kayra-auth-api:1.0.0
+```
+
+
 
 Create release artifacts independently for each executable service:
 
@@ -415,7 +444,9 @@ dotnet publish KayraExport.Log.API -c Release
 dotnet publish KayraExport.Gateway -c Release
 ```
 
-Runtime configuration should be supplied through environment variables or a secure configuration provider.
+Runtime configuration must be supplied through environment variables or a secure configuration provider. Database migrations must be applied as a separate administrative process before starting a new release.
+
+
 
 ## Twelve-Factor Practices
 
