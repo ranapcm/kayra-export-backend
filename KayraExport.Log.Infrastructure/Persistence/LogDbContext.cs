@@ -33,12 +33,18 @@ public sealed class LogDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(200);
 
+            entity.Property(logEntry => logEntry.Level)
+                .IsRequired()
+                .HasMaxLength(20)
+                .HasDefaultValue("Information");
+
             entity.Property(logEntry => logEntry.Payload)
                 .IsRequired()
                 .HasColumnType("jsonb");
 
             entity.HasIndex(logEntry => logEntry.ReceivedAt);
             entity.HasIndex(logEntry => logEntry.RoutingKey);
+            entity.HasIndex(logEntry => logEntry.Level);
         });
     }
 }

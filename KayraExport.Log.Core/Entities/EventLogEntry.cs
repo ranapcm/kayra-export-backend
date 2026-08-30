@@ -10,6 +10,8 @@ public sealed class EventLogEntry
 
     public string RoutingKey { get; set; } = string.Empty;
 
+    public string Level { get; set; } = "Information";
+
     public string Payload { get; set; } = string.Empty;
 
     public DateTime OccurredAt { get; set; }

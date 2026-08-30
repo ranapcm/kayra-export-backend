@@ -135,15 +135,16 @@ public sealed class ProductEventConsumer : BackgroundService
                 scope.ServiceProvider
                     .GetRequiredService<IEventLogRepository>();
 
-            var logEntry = new EventLogEntry
-            {
-                ServiceName = "ProductService",
-                EventType = eventType,
-                RoutingKey = eventArgs.RoutingKey,
-                Payload = payload,
-                OccurredAt = occurredAt,
-                ReceivedAt = DateTime.UtcNow
-            };
+           var logEntry = new EventLogEntry
+{
+    ServiceName = "ProductService",
+    EventType = eventType,
+    RoutingKey = eventArgs.RoutingKey,
+    Level = "Information",
+    Payload = payload,
+    OccurredAt = occurredAt,
+    ReceivedAt = DateTime.UtcNow
+};
 
             await repository.AddAsync(logEntry);
             await repository.SaveChangesAsync();
