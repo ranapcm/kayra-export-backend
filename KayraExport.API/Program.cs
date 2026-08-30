@@ -1,11 +1,12 @@
 using System.Text;
+using KayraExport.API.Middleware;
 using KayraExport.Application;
 using KayraExport.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
-using KayraExport.API.Middleware;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog((context, configuration) =>
@@ -21,69 +22,89 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "KayraExport API",
+        Title = "KayraExport Product API",
         Version = "v1",
-        Description = "Authentication and product management API"
+        Description = "Product management microservice"
     });
 
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
+    options.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
         {
-            new OpenApiSecurityScheme
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header
+        });
+
+    options.AddSecurityRequirement(
+        new OpenApiSecurityRequirement
+        {
             {
-                Reference = new OpenApiReference
+                new OpenApiSecurityScheme
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
+            }
+        });
 });
 
 var jwtKey = builder.Configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException("JWT key is not configured.");
+    ?? throw new InvalidOperationException(
+        "JWT key is not configured.");
 
 builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddAuthentication(
+        JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtKey)),
-        ClockSkew = TimeSpan.Zero
-    };
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer =
+                    builder.Configuration["Jwt:Issuer"],
+                ValidAudience =
+                    builder.Configuration["Jwt:Audience"],
+                IssuerSigningKey =
+                    new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtKey)),
+                ClockSkew = TimeSpan.Zero
+            };
 
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
+        options.Events = new JwtBearerEvents
         {
-            Console.WriteLine(
-                $"JWT authentication failed: {context.Exception.Message}");
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine(
+                    $"JWT authentication failed: " +
+                    $"{context.Exception.Message}");
 
-            return Task.CompletedTask;
-        }
-    };
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ProductRead", policy =>
+        policy.RequireAuthenticatedUser());
+
+    options.AddPolicy("ProductWrite", policy =>
+        policy.RequireRole("User", "Admin"));
+
+    options.AddPolicy("ProductDelete", policy =>
+        policy.RequireRole("Admin"));
 });
-
-builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -92,7 +113,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -100,12 +123,14 @@ app.MapControllers();
 
 try
 {
-    Log.Information("Starting KayraExport API");
+    Log.Information("Starting KayraExport Product API");
     app.Run();
 }
 catch (Exception exception)
 {
-    Log.Fatal(exception, "Application terminated unexpectedly");
+    Log.Fatal(
+        exception,
+        "Application terminated unexpectedly");
 }
 finally
 {

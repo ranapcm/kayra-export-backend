@@ -12,7 +12,6 @@ namespace KayraExport.API.Controllers;
 
 [ApiController]
 [Route("api/v1/products")]
-[Authorize]
 public class ProductsController : ControllerBase
 {
     private readonly ISender _sender;
@@ -23,6 +22,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = "ProductRead")]
     public async Task<ActionResult<IReadOnlyList<ProductDto>>> GetAll(
         CancellationToken cancellationToken)
     {
@@ -34,6 +34,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = "ProductRead")]
     public async Task<ActionResult<ProductDto>> GetById(
         Guid id,
         CancellationToken cancellationToken)
@@ -46,11 +47,14 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "ProductWrite")]
     public async Task<ActionResult<ProductDto>> Create(
         CreateProductCommand command,
         CancellationToken cancellationToken)
     {
-        var product = await _sender.Send(command, cancellationToken);
+        var product = await _sender.Send(
+            command,
+            cancellationToken);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -59,6 +63,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "ProductWrite")]
     public async Task<ActionResult<ProductDto>> Update(
         Guid id,
         UpdateProductCommand command,
@@ -66,12 +71,15 @@ public class ProductsController : ControllerBase
     {
         command.Id = id;
 
-        var product = await _sender.Send(command, cancellationToken);
+        var product = await _sender.Send(
+            command,
+            cancellationToken);
 
         return Ok(product);
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "ProductDelete")]
     public async Task<IActionResult> Delete(
         Guid id,
         CancellationToken cancellationToken)
