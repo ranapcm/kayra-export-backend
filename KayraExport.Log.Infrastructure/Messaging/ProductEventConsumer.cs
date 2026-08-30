@@ -80,6 +80,8 @@ public sealed class ProductEventConsumer : BackgroundService
 
         consumer.Received += HandleMessageAsync;
 
+        // Manual acknowledgements prevent message loss before
+        // the event has been persisted successfully.
         _channel.BasicConsume(
             queue: QueueName,
             autoAck: false,
@@ -111,11 +113,15 @@ public sealed class ProductEventConsumer : BackgroundService
             return;
         }
 
+        var payload = Encoding.UTF8.GetString(
+            eventArgs.Body.ToArray());
+
+        var eventType =
+            eventArgs.BasicProperties.Type
+            ?? eventArgs.RoutingKey;
+
         try
         {
-            var payload = Encoding.UTF8.GetString(
-                eventArgs.Body.ToArray());
-
             using var document = JsonDocument.Parse(payload);
 
             var occurredAt = document.RootElement.TryGetProperty(
@@ -124,10 +130,6 @@ public sealed class ProductEventConsumer : BackgroundService
                 ? occurredAtElement.GetDateTime()
                 : DateTime.UtcNow;
 
-            var eventType =
-                eventArgs.BasicProperties.Type
-                ?? eventArgs.RoutingKey;
-
             await using var scope =
                 _scopeFactory.CreateAsyncScope();
 
@@ -135,16 +137,16 @@ public sealed class ProductEventConsumer : BackgroundService
                 scope.ServiceProvider
                     .GetRequiredService<IEventLogRepository>();
 
-           var logEntry = new EventLogEntry
-{
-    ServiceName = "ProductService",
-    EventType = eventType,
-    RoutingKey = eventArgs.RoutingKey,
-    Level = "Information",
-    Payload = payload,
-    OccurredAt = occurredAt,
-    ReceivedAt = DateTime.UtcNow
-};
+            var logEntry = new EventLogEntry
+            {
+                ServiceName = "ProductService",
+                EventType = eventType,
+                RoutingKey = eventArgs.RoutingKey,
+                Level = "Information",
+                Payload = payload,
+                OccurredAt = occurredAt,
+                ReceivedAt = DateTime.UtcNow
+            };
 
             await repository.AddAsync(logEntry);
             await repository.SaveChangesAsync();
@@ -162,12 +164,68 @@ public sealed class ProductEventConsumer : BackgroundService
         {
             _logger.LogError(
                 exception,
-                "RabbitMQ event could not be processed.");
+                "RabbitMQ event {EventType} could not be processed.",
+                eventType);
 
+            await StoreErrorLogAsync(
+                eventType,
+                eventArgs.RoutingKey,
+                payload,
+                exception);
+
+            // Invalid messages are rejected without requeueing to
+            // prevent an endless poison-message processing loop.
             _channel.BasicNack(
                 deliveryTag: eventArgs.DeliveryTag,
                 multiple: false,
                 requeue: false);
+        }
+    }
+
+    private async Task StoreErrorLogAsync(
+        string eventType,
+        string routingKey,
+        string originalPayload,
+        Exception exception)
+    {
+        try
+        {
+            await using var scope =
+                _scopeFactory.CreateAsyncScope();
+
+            var repository =
+                scope.ServiceProvider
+                    .GetRequiredService<IEventLogRepository>();
+
+            var errorPayload = JsonSerializer.Serialize(new
+            {
+                Message = exception.Message,
+                ExceptionType = exception.GetType().FullName,
+                OriginalPayload = originalPayload,
+                FailedAt = DateTime.UtcNow
+            });
+
+            var errorLogEntry = new EventLogEntry
+            {
+                ServiceName = "LogService",
+                EventType = eventType,
+                RoutingKey = routingKey,
+                Level = "Error",
+                Payload = errorPayload,
+                OccurredAt = DateTime.UtcNow,
+                ReceivedAt = DateTime.UtcNow
+            };
+
+            await repository.AddAsync(errorLogEntry);
+            await repository.SaveChangesAsync();
+        }
+        catch (Exception loggingException)
+        {
+            // If centralized persistence is also unavailable,
+            // the critical failure remains visible in stdout.
+            _logger.LogCritical(
+                loggingException,
+                "The centralized error log could not be persisted.");
         }
     }
 
