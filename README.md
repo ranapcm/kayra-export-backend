@@ -433,7 +433,11 @@ docker run --rm -p 5227:8080 \
   kayra-auth-api:1.0.0
 ```
 
+## Deployment
 
+## Deployment
+
+Create release artifacts independently for each executable service:
 
 Create release artifacts independently for each executable service:
 
