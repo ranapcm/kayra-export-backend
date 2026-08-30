@@ -1,124 +1,394 @@
-# KayraExport Backend API
+# KayraExport Microservices Backend
 
-KayraExport is a RESTful backend API developed with .NET 7 using Onion Architecture. It provides JWT-based authentication, product management, PostgreSQL persistence, Redis caching, global exception handling, structured logging, and unit tests.
+KayraExport is a .NET 7 backend system built with Onion Architecture and a microservice-oriented design. It includes independent Auth, Product, Log, and API Gateway services.
+
+Repository: https://github.com/ranapcm/kayra-export-backend
+
+## Architecture
+
+The system contains the following services:
+
+### Auth Microservice
+
+- ASP.NET Core Identity
+- JWT access tokens
+- Refresh token rotation
+- Token revocation
+- Role management
+- Independent PostgreSQL database
+
+Projects:
+
+- `KayraExport.Auth.Core`
+- `KayraExport.Auth.Application`
+- `KayraExport.Auth.Infrastructure`
+- `KayraExport.Auth.API`
+
+### Product Microservice
+
+- Onion Architecture
+- CQRS with MediatR
+- Product CRUD operations
+- PostgreSQL persistence
+- Redis caching
+- Cache invalidation
+- Role-based and policy-based authorization
+- RabbitMQ event publishing
+
+Projects:
+
+- `KayraExport.Core`
+- `KayraExport.Application`
+- `KayraExport.Infrastructure`
+- `KayraExport.API`
+
+### Log Microservice
+
+- Centralized product event storage
+- RabbitMQ event consumer
+- Structured JSON payload storage
+- Information, Warning, Error, and Critical severity support
+- Independent PostgreSQL database
+- Log query endpoint
+
+Projects:
+
+- `KayraExport.Log.Core`
+- `KayraExport.Log.Application`
+- `KayraExport.Log.Infrastructure`
+- `KayraExport.Log.API`
+
+### API Gateway
+
+- YARP Reverse Proxy
+- Central JWT validation
+- Route-based authorization
+- Fixed-window rate limiting
+- Auth, Product, and Log service routing
+
+Project:
+
+- `KayraExport.Gateway`
 
 ## Technologies
 
 - .NET 7
 - ASP.NET Core Web API
+- ASP.NET Core Identity
 - Entity Framework Core
 - PostgreSQL
 - Redis
+- RabbitMQ
+- YARP Reverse Proxy
 - MediatR
 - JWT Authentication
 - Serilog
+- Swagger / OpenAPI
 - Docker Compose
 - xUnit
 - Moq
-- Swagger / OpenAPI
 
-## Architecture
+## System Flow
 
-The solution follows Onion Architecture and is divided into the following projects:
+```text
+Client
+  |
+  v
+API Gateway
+  |
+  +-- Auth API ---- Auth PostgreSQL
+  |
+  +-- Product API - Product PostgreSQL
+  |       |
+  |       +-------- Redis
+  |       |
+  |       +-------- RabbitMQ
+  |                     |
+  |                     v
+  +-- Log API ----- Log PostgreSQL
+```
 
-- `KayraExport.Core`: Domain entities
-- `KayraExport.Application`: Use cases, CQRS commands and queries, DTOs, and interfaces
-- `KayraExport.Infrastructure`: Database, repositories, authentication, caching, and external service implementations
-- `KayraExport.API`: Controllers, middleware, dependency configuration, and application startup
-- `KayraExport.Tests`: Unit tests
-
-## Features
+## Main Features
 
 - User registration and login
-- JWT-based authentication
-- Protected product endpoints
+- JWT access-token generation
+- Refresh-token rotation and revocation
+- Role-based authorization
+- Policy-based authorization
 - Product create, read, update, and delete operations
-- CQRS implementation with MediatR
-- PostgreSQL persistence with Entity Framework Core
-- Redis caching for product lists
-- Cache invalidation after create, update, and delete operations
-- Global exception handling with Problem Details responses
-- Structured console logging with Serilog
-- Swagger documentation and Bearer authentication
-- Unit tests with xUnit and Moq
+- CQRS command/query separation with MediatR
+- Asynchronous database operations
+- Redis product-list caching
+- Cache invalidation after product changes
+- RabbitMQ product-created and product-updated events
+- Central event logging
+- Structured JSON log payloads
+- Log severity levels
+- Gateway-level JWT validation
+- Gateway-level rate limiting
+- Global exception handling with Problem Details
+- Swagger API documentation
+- Unit tests
+
+## Authorization Policies
+
+| Policy | Allowed roles | Operations |
+|---|---|---|
+| `ProductRead` | Authenticated users | List and retrieve products |
+| `ProductWrite` | `User`, `Admin` | Create and update products |
+| `ProductDelete` | `Admin` | Delete products |
 
 ## Prerequisites
 
 - .NET 7 SDK
 - Docker Desktop
 - Git
+- Entity Framework Core CLI tools
 
-## Configuration
-
-The development database and Redis services are configured in `docker-compose.yml`.
-
-The JWT signing key must not be committed to source control. Configure it with .NET User Secrets:
+Install the EF Core CLI tool if it is not already installed:
 
 ```bash
-dotnet user-secrets set "Jwt:Key" "your-secure-development-key-at-least-32-characters" --project KayraExport.API
+dotnet tool install --global dotnet-ef --version 7.0.11
 ```
 
-## Running the Project
+## Infrastructure Services
 
-Start PostgreSQL and Redis:
+Docker Compose starts the following infrastructure:
+
+| Service | Container | Host port |
+|---|---|---:|
+| Product PostgreSQL | `kayra-postgres` | 5432 |
+| Auth PostgreSQL | `kayra-auth-postgres` | 5433 |
+| Log PostgreSQL | `kayra-log-postgres` | 5434 |
+| Redis | `kayra-redis` | 6379 |
+| RabbitMQ | `kayra-rabbitmq` | 5672 |
+| RabbitMQ Management | `kayra-rabbitmq` | 15672 |
+
+Start the infrastructure:
 
 ```bash
 docker compose up -d
 ```
 
-Apply the database migrations:
+Check container health:
+
+```bash
+docker compose ps
+```
+
+RabbitMQ Management UI:
+
+```text
+http://localhost:15672
+```
+
+## JWT Configuration
+
+The Auth API creates JWT tokens. The Product API and Gateway validate those tokens.
+
+The same secure JWT key must be configured for all three projects. Do not commit the key to source control.
+
+```bash
+dotnet user-secrets set "Jwt:Key" "your-secure-key-at-least-32-characters" --project KayraExport.Auth.API
+
+dotnet user-secrets set "Jwt:Key" "your-secure-key-at-least-32-characters" --project KayraExport.API
+
+dotnet user-secrets set "Jwt:Key" "your-secure-key-at-least-32-characters" --project KayraExport.Gateway
+```
+
+The services use the following token values:
+
+```text
+Issuer: KayraExport.Auth
+Audience: KayraExport.Services
+```
+
+Production secrets should be supplied through environment variables or a secure secret-management service.
+
+## Database Migrations
+
+Apply Product database migrations:
 
 ```bash
 dotnet ef database update --project KayraExport.Infrastructure --startup-project KayraExport.API
 ```
 
-Run the API:
+Apply Auth database migrations:
 
 ```bash
-dotnet run --project KayraExport.API
+dotnet ef database update --project KayraExport.Auth.Infrastructure --startup-project KayraExport.Auth.API
 ```
 
-Swagger is available at:
+Apply Log database migrations:
+
+```bash
+dotnet ef database update --project KayraExport.Log.Infrastructure --startup-project KayraExport.Log.API
+```
+
+## Running the Services
+
+Open a separate terminal for each service.
+
+### Auth API
+
+```bash
+dotnet run --project KayraExport.Auth.API --no-launch-profile --urls "http://localhost:5227"
+```
+
+Swagger:
 
 ```text
-http://localhost:5113/swagger
+http://localhost:5227/swagger/index.html
 ```
 
-## Authentication
+### Product API
 
-Register a user through:
+```bash
+dotnet run --project KayraExport.API --no-launch-profile --urls "http://localhost:5113"
+```
+
+Swagger:
 
 ```text
-POST /api/v1/auth/register
+http://localhost:5113/swagger/index.html
 ```
 
-Log in through:
+### Log API
+
+```bash
+dotnet run --project KayraExport.Log.API --no-launch-profile --urls "http://localhost:5082"
+```
+
+Swagger:
 
 ```text
-POST /api/v1/auth/login
+http://localhost:5082/swagger/index.html
 ```
 
-Copy the returned JWT token and use the Swagger `Authorize` button to access protected product endpoints.
+### API Gateway
 
-## API Endpoints
+```bash
+dotnet run --project KayraExport.Gateway --no-launch-profile --urls "http://localhost:5001"
+```
 
-| Method | Endpoint | Description | Authentication |
-|---|---|---|---|
-| POST | `/api/v1/auth/register` | Register a user | No |
-| POST | `/api/v1/auth/login` | Log in and receive a JWT | No |
-| GET | `/api/v1/products` | List all products | Yes |
-| GET | `/api/v1/products/{id}` | Get a product by ID | Yes |
-| POST | `/api/v1/products` | Create a product | Yes |
-| PUT | `/api/v1/products/{id}` | Update a product | Yes |
-| DELETE | `/api/v1/products/{id}` | Delete a product | Yes |
+Gateway health endpoint:
+
+```text
+http://localhost:5001/
+```
+
+## API Gateway Routes
+
+| Route | Destination | Authorization |
+|---|---|---|
+| `/api/v1/auth/**` | Auth API | Anonymous |
+| `/api/v1/products/**` | Product API | JWT required |
+| `/api/v1/logs/**` | Log API | JWT required |
+
+## Auth Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/v1/auth/register` | Register a user |
+| POST | `/api/v1/auth/login` | Log in and receive tokens |
+| POST | `/api/v1/auth/refresh` | Rotate the refresh token |
+| POST | `/api/v1/auth/revoke` | Revoke a refresh token |
+
+## Product Endpoints
+
+| Method | Endpoint | Policy |
+|---|---|---|
+| GET | `/api/v1/products` | `ProductRead` |
+| GET | `/api/v1/products/{id}` | `ProductRead` |
+| POST | `/api/v1/products` | `ProductWrite` |
+| PUT | `/api/v1/products/{id}` | `ProductWrite` |
+| DELETE | `/api/v1/products/{id}` | `ProductDelete` |
+
+## Log Endpoint
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/v1/logs?count=10` | Return the latest centralized event logs |
+
+Example request through the Gateway:
+
+```bash
+curl "http://localhost:5001/api/v1/logs?count=10" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
 
 ## Redis Caching
 
-The product list is cached in Redis for five minutes using the `products:all` key.
+Product lists are cached using the `products:all` key.
 
-The cache is invalidated whenever a product is created, updated, or deleted. If Redis is temporarily unavailable, the API continues operating with PostgreSQL.
+The cache is invalidated after:
+
+- Product creation
+- Product update
+- Product deletion
+
+If Redis is temporarily unavailable, the Product API continues using PostgreSQL.
+
+## Event-Driven Communication
+
+The Product microservice publishes events to the durable RabbitMQ topic exchange:
+
+```text
+kayra.events
+```
+
+Routing keys:
+
+```text
+product.created
+product.updated
+```
+
+The Log microservice consumes events from:
+
+```text
+kayra.logs.product-events
+```
+
+The consumer uses manual acknowledgements and stores structured event payloads in the Log PostgreSQL database.
+
+## Logging
+
+The system uses structured logging and centralized event storage.
+
+Supported severity values:
+
+- `Information`
+- `Warning`
+- `Error`
+- `Critical`
+
+Event payloads are stored as PostgreSQL `jsonb` values so they can be queried and analyzed.
+
+## Error Handling
+
+The Product API uses global exception-handling middleware and returns Problem Details responses.
+
+Common response codes:
+
+- `200 OK`
+- `201 Created`
+- `204 No Content`
+- `400 Bad Request`
+- `401 Unauthorized`
+- `403 Forbidden`
+- `404 Not Found`
+- `409 Conflict`
+- `429 Too Many Requests`
+- `500 Internal Server Error`
 
 ## Testing
+
+Build the complete solution:
+
+```bash
+dotnet build
+```
 
 Run all unit tests:
 
@@ -126,35 +396,78 @@ Run all unit tests:
 dotnet test
 ```
 
-The tests verify product creation, repository persistence, cache invalidation, and input normalization.
+The tests cover:
+
+- Product creation
+- Input normalization
+- Repository persistence
+- Cache invalidation
+- Product event publishing
+
+## Deployment
+
+Create release artifacts independently for each executable service:
+
+```bash
+dotnet publish KayraExport.Auth.API -c Release
+dotnet publish KayraExport.API -c Release
+dotnet publish KayraExport.Log.API -c Release
+dotnet publish KayraExport.Gateway -c Release
+```
+
+Runtime configuration should be supplied through environment variables or a secure configuration provider.
+
+## Twelve-Factor Practices
+
+The project applies the following practices:
+
+- Single version-controlled codebase
+- NuGet-managed dependencies
+- Environment-based secret configuration
+- Independent backing services
+- Separate build and runtime stages
+- Stateless API processes
+- Port-independent services
+- Disposable background consumers
+- Standard output logging
+- Independent database migration commands
+
+## Git Workflow
+
+Development is performed on:
+
+```text
+test/v1.0.0
+```
+
+After final verification, the test branch is merged into:
+
+```text
+prod/v1.0.0
+```
 
 ## Useful Commands
 
-Check running containers:
+Check the repository:
 
 ```bash
-docker compose ps
+git status
 ```
 
-Stop the containers:
+Check formatting problems:
+
+```bash
+git diff --check
+```
+
+Stop infrastructure containers:
 
 ```bash
 docker compose stop
 ```
 
-Build the solution:
+Remove stopped containers while preserving named volumes:
 
 ```bash
-dotnet build
+docker compose down
 ```
-
-## Response Codes
-
-- `200 OK`: Successful request
-- `201 Created`: Resource successfully created
-- `204 No Content`: Resource successfully deleted
-- `400 Bad Request`: Invalid request
-- `401 Unauthorized`: Invalid credentials or missing/invalid token
-- `404 Not Found`: Resource not found
-- `409 Conflict`: Conflicting resource or operation
-- `500 Internal Server Error`: Unexpected server error
